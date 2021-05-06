@@ -1,14 +1,37 @@
 <!doctype html>
 <html ng-app>
   <head>
+    <link rel="stylesheet" href="./css/main.css">
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+    <script src="https://unpkg.com/vtk.js@17.17.1/vtk.js"></script>
   </head>
   <body>
     <div>
-      <label>Name:</label>
-      <input type="text" ng-model="yourName" placeholder="Enter a name here">
-      <hr>
-      <h1>Hello {{yourName}}!</h1>
+    <script type="text/javascript">
+        // --------------------------------------------------------------------------
+        // Example code
+        // --------------------------------------------------------------------------
+        var fullScreenRenderer = vtk.Rendering.Misc.vtkFullScreenRenderWindow.newInstance();
+        var actor              = vtk.Rendering.Core.vtkActor.newInstance();
+        var mapper             = vtk.Rendering.Core.vtkMapper.newInstance();
+        var cone               = vtk.Filters.Sources.vtkConeSource.newInstance();
+      
+        actor.setMapper(mapper);
+        mapper.setInputConnection(cone.getOutputPort());
+      
+        var renderer = fullScreenRenderer.getRenderer();
+        renderer.addActor(actor);
+        renderer.setBackground(0,0,0,0);
+        renderer.resetCamera();
+      
+        var renderWindow = fullScreenRenderer.getRenderWindow();
+        
+        renderWindow.render();
+        
+      </script>
+      </div>
+    <div>
+
     </div>
   </body>
 </html>
