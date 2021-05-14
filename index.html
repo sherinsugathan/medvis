@@ -1,27 +1,83 @@
-<!doctype html>
-<html ng-app>
+<!DOCTYPE html>
+<html>
   <head>
-    <link rel="stylesheet" href="./css/main.css">
+    <link rel="stylesheet" type="text/css" href="main.css"/>
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
     <script src="https://unpkg.com/vtk.js@17.17.1/vtk.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
   </head>
-  <body>
+  <body onload="loadData()">
     <div>
-    <script type="text/javascript">
-        // --------------------------------------------------------------------------
-        // Example code
-        // --------------------------------------------------------------------------
-        var fullScreenRenderer = vtk.Rendering.Misc.vtkFullScreenRenderWindow.newInstance();
-        var actor              = vtk.Rendering.Core.vtkActor.newInstance();
-        var mapper             = vtk.Rendering.Core.vtkMapper.newInstance();
-        var cone               = vtk.Filters.Sources.vtkConeSource.newInstance();
+      <div style="text-align: center; position:absolute; left:calc(50% - 80px); top: 50%;">
+        <div class="loader" id="loader"></div>
+        <!--<progress id="progressBar" value="0" max="100" style="width:300px;height:8px;"></progress> -->
+      </div>
+      
+          <script type="text/javascript">
+    function _(el) {
+  return document.getElementById(el);
+}
 
+var ds;
+var fullScreenRenderer = vtk.Rendering.Misc.vtkFullScreenRenderWindow.newInstance();
+var renderer = fullScreenRenderer.getRenderer();
+renderer.setBackground(0,0,0,0);
+const renderWindow = fullScreenRenderer.getRenderWindow();
+const actor = vtk.Rendering.Core.vtkVolume.newInstance();
+const mapper = vtk.Rendering.Core.vtkVolumeMapper.newInstance();
 
-        actor.setMapper(mapper);
-        mapper.setInputConnection(cone.getOutputPort());
+function updateScene(val){
+  var str1 = "E_T1_";
+  var str2 = val.toString();
+  var scalarArrayname = str1.concat(str2);
+  //console.log(scalarArrayname);
+  ds.getPointData().setActiveScalars(scalarArrayname.toString());
+  renderer.addVolume(actor);
+  //ds.getPointData().setActiveScalars(val);
+  mapper.setInputData(ds);
+  //mapper.getInput().getPointData().setActiveScalars(scalarArrayname.toString());
+  console.log(ds.getPointData().getActiveScalars());
+  //console.log(mapper.getScalarRange());
+  renderWindow.render();
+}
 
-        $.ajax({
+function loadData() {
+  const reader = vtk.IO.XML.vtkXMLImageDataReader.newInstance();
+reader
+  //.setUrl('./resampled-image4.vti', { loadData: true })
+  .setUrl('https://drive.google.com/file/d/1DV06k1yn3iedxCB30qoTSFi-Vzas7SAR/view?usp=sharing', { loadData: true })
+  .then(() => {
+    ds = reader.getOutputData();
+    ds.getPointData().setActiveScalars("E_T1_21");
+
+//mapper.setBlendModeToComposite();
+//mapper.setSampleDistance(1.5);
+
+const pfun = vtk.Common.DataModel.vtkPiecewiseFunction.newInstance();
+pfun.addPoint(0.0,0.0);
+pfun.addPoint(0.15,0.0);
+pfun.addPoint(0.2,1.0);
+pfun.addPoint(0.25,1.0);
+pfun.addPoint(0.26,0.0);
+pfun.addPoint(15,0.0);
+
+const ctfun = vtk.Rendering.Core.vtkColorTransferFunction.newInstance();
+ctfun.addRGBPoint(0.0, 0.0, 1.0, 0.0);
+ctfun.addRGBPoint(0.1, 1.0, 0.0, 0.0);
+ctfun.addRGBPoint(0.28, 0.0, 0.0, 1.0);
+ctfun.addRGBPoint(0.30, 0.0, 1.0, 0.0);
+ctfun.addRGBPoint(0.35, 0.0, 0.1, 0.0);
+
+// Pipeline handling
+mapper.setInputData(ds);
+actor.setMapper(mapper);
+actor.getProperty().setScalarOpacity(0, pfun);
+actor.getProperty().setRGBTransferFunction(0, ctfun);
+
+//renderer.addActor(actor);
+renderer.addVolume(actor);
+
+$.ajax({
             url: './controller.html',
             type: 'get',
             async: false,
@@ -30,15 +86,29 @@
               fullScreenRenderer.addController(html);
             }
     });
-        
-        var renderer = fullScreenRenderer.getRenderer();
-        renderer.addActor(actor);
-        renderer.setBackground(0,0,0,0);
-        renderer.resetCamera();
-      
-        var renderWindow = fullScreenRenderer.getRenderWindow();
-        
-        renderWindow.render();
+
+var slider = document.getElementById("myRange");
+
+console.log(slider.value);
+var o = document.querySelector('output');
+slider.addEventListener('input', function () {
+  o.innerHTML = slider.value;
+  updateScene(slider.value);
+}, false);
+
+renderer.resetCamera();
+renderWindow.render();
+
+console.log("ready");
+$("#loader").hide();
+
+  });
+
+}
+
+
+
+
         
       </script>
       </div>

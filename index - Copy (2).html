@@ -1,0 +1,123 @@
+<!doctype html>
+<html ng-app>
+  <head>
+    <link rel="stylesheet" type="text/css" href="./css/main.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+    <script src="https://unpkg.com/vtk.js@17.17.1/vtk.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  </head>
+  <body>
+    <div>
+      <div style="text-align: center; position:absolute; left:calc(50% - 150px); top: 50%;"><progress id="progressBar" value="0" max="100" style="width:300px;height:8px;"></progress></div>
+          <script type="text/javascript">
+    function _(el) {
+  return document.getElementById(el);
+}
+
+
+var _OBJECT_URL;
+var vtiData;
+      var request = new XMLHttpRequest();
+      request.addEventListener('readystatechange', function(e) {
+    	if(request.readyState == 2 && request.status == 200) {
+    		// Download is being started
+    	}
+    	else if(request.readyState == 3) {
+    		// Download is under progress
+    	}
+    	else if(request.readyState == 4) {
+    		// Downloaing has finished
+
+    		_OBJECT_URL = URL.createObjectURL(request.response);
+
+    		// Set href as a local object URL
+    		//document.querySelector('#save-file').setAttribute('href', _OBJECT_URL);
+    		vtiData = request.response;
+        //console.log(res.text());
+    		// Set name of download
+    		//document.querySelector('#save-file').setAttribute('download', 'img.jpeg');
+    		// --------------------------------------------------------------------------
+// VTK.js
+// --------------------------------------------------------------------------
+var fullScreenRenderer = vtk.Rendering.Misc.vtkFullScreenRenderWindow.newInstance();
+//var actor              = vtk.Rendering.Core.vtkActor.newInstance();
+//var mapper             = vtk.Rendering.Core.vtkMapper.newInstance();
+//var cone               = vtk.Filters.Sources.vtkConeSource.newInstance();
+//actor.setMapper(mapper);
+//mapper.setInputConnection(cone.getOutputPort());
+var renderer = fullScreenRenderer.getRenderer();
+//renderer.addActor(actor);
+renderer.setBackground(0,0,0,0);
+renderer.resetCamera();
+
+var renderWindow = fullScreenRenderer.getRenderWindow();
+renderWindow.getInteractor().setDesiredUpdateRate(15);
+
+const vtiReader = vtk.IO.XML.vtkXMLImageDataReader.newInstance();
+
+//const textEncoder = new TextEncoder();
+//vtiReader.parseAsArrayBuffer(textEncoder.encode(vtiData));
+
+vtiReader.parseAsArrayBuffer(vtiData);
+//vtiReader.parseXML(vtiData);
+
+const source = vtiReader.getOutputData(0);
+const mapper = vtk.Rendering.Core.vtkVolumeMapper.newInstance();
+const actor = vtk.Rendering.Core.vtkVolume.newInstance();
+const dataArray = source.getPointData().getScalars() || source.getPointData().getArrays()[0];
+const dataRange = dataArray.getRange();
+const lookupTable = vtkColorTransferFunction.newInstance();
+const piecewiseFunction = vtkPiecewiseFunction.newInstance();
+
+// Pipeline handling
+actor.setMapper(mapper);
+mapper.setInputData(source);
+renderer.addActor(actor);
+
+$.ajax({
+            url: './controller.html',
+            type: 'get',
+            async: false,
+            success: function(html) {
+              //var code = html; // here you'll store the html in a string if you want
+              fullScreenRenderer.addController(html);
+            }
+    });
+
+renderWindow.render();
+
+
+
+
+    		// Recommended : Revoke the object URL after some time to free up resources
+    		// There is no way to find out whether user finished downloading
+    		setTimeout(function() {
+    			window.URL.revokeObjectURL(_OBJECT_URL);
+    		}, 60*1000);
+    	}
+    });
+
+    request.addEventListener('progress', function(e) {
+    	var percent_complete = (e.loaded / e.total)*100;
+
+      //var percent = (event.loaded / event.total) * 100;
+    _("progressBar").value = Math.round(percent_complete);
+
+    	console.log(percent_complete);
+    });
+
+    request.responseType = 'blob';
+
+    // Download dataset file
+    request.open('get', "./data/resampled-imageText6.vti");
+    request.send();
+        
+
+        
+      </script>
+      </div>
+    <div>
+
+    </div>
+  </body>
+</html>
